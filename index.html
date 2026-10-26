@@ -9,14 +9,16 @@ main{max-width:520px;margin:0 auto;padding:40px 16px}p{margin:0 0 10px}.quiet{co
 // The address that never changes. The Mac's Cloudflare address changes when it restarts; host.json, in this repo,
 // always holds the current one (written by Dignan's page). The key travels after the # and never leaves the phone.
 (function () {
+  // A ticket link from a Things note is ?t=<ticket id>: it carries no key, so the key comes from this browser's memory.
+  var t = (new URLSearchParams(location.search).get("t") || "").replace(/[^A-Za-z0-9]/g, "");
   var key = location.hash.slice(1), m = document.getElementById("m"), q = document.getElementById("q");
   try { if (key) localStorage.setItem("k", key); else key = localStorage.getItem("k") || ""; } catch (e) {}
-  if (!/^[A-Za-z0-9_-]{20,}$/.test(key)) { m.textContent = "Open Dignan from the link in your Things to-do."; return; }
+  if (!/^[A-Za-z0-9_-]{20,}$/.test(key)) { m.textContent = "This browser has not opened Dignan yet."; q.textContent = "Tap the link in the Things to-do \u201cDignan on my phone\u201d once in this browser, then this link works here too."; return; }
   fetch("https://api.github.com/repos/pat5k/dignan/contents/host.json?t=" + Date.now(), { headers: { Accept: "application/vnd.github.raw+json" }, cache: "no-store" })
     .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
     .then(function (d) {
       if (!/^[a-z0-9.-]+$/.test(d.host || "")) throw new Error("no address");
-      location.replace("https://" + d.host + "/k/" + key);
+      location.replace("https://" + d.host + "/k/" + key + (t ? "#" + t : ""));
     })
     .catch(function (e) { m.textContent = "Dignan could not be reached."; q.textContent = "The Mac may be asleep or restarting. Try again in a minute. (" + e.message + ")"; });
 })();
