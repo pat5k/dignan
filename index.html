@@ -11,9 +11,13 @@ main{max-width:520px;margin:0 auto;padding:40px 16px}p{margin:0 0 10px}.quiet{co
 (function () {
   // A ticket link from a Things note is ?t=<ticket id>: it carries no key, so the key comes from this browser's memory.
   var t = (new URLSearchParams(location.search).get("t") || "").replace(/[^A-Za-z0-9]/g, "");
-  var key = location.hash.slice(1), m = document.getElementById("m"), q = document.getElementById("q");
+  // It may also carry #i<pass>: a pass good for two weeks, minted for that note, so a browser that never opened Dignan
+  // (his laptop, 2026-10-26) still gets in. The key this browser holds wins; the pass is used once and never stored.
+  var h = location.hash.slice(1), pass = h.charAt(0) === "i" && t ? h.slice(1) : "", key = pass ? "" : h;
+  var m = document.getElementById("m"), q = document.getElementById("q");
   try { if (key) localStorage.setItem("k", key); else key = localStorage.getItem("k") || ""; } catch (e) {}
-  if (!/^[A-Za-z0-9_-]{20,}$/.test(key)) { m.textContent = "This browser has not opened Dignan yet."; q.textContent = "Tap the link in the Things to-do \u201cDignan on my phone\u201d once in this browser, then this link works here too."; return; }
+  if (pass && key.length < 40) key = pass;
+  if (!/^[A-Za-z0-9_-]{20,}$/.test(key)) { m.textContent = "This browser has not opened Dignan yet."; q.textContent = "Open the ticket from its newest note in Things, or tap the link in the to-do \u201cDignan on my phone\u201d once in this browser."; return; }
   fetch("https://api.github.com/repos/pat5k/dignan/contents/host.json?t=" + Date.now(), { headers: { Accept: "application/vnd.github.raw+json" }, cache: "no-store" })
     .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
     .then(function (d) {
